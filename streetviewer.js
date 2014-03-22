@@ -165,9 +165,8 @@
 	};
 	
 	StreetViewer.prototype.getDirections = function(origin, destination){
+		$(".loading-section").show();
 		var self = this;
-		origin = "West Townsend, MA";
-		destination = "Toronto, ON";
 		var request = {
 			origin: origin,
 			destination: destination,
@@ -184,9 +183,16 @@
 		
 	
 	$(window).load(function(){
-		var streetViewer = new StreetViewer();
-		streetViewer.init();
-		window.SV = streetViewer;
+		var SV = new StreetViewer();
+		SV.init();
+		window.SV = SV;
+		
+		$("#go").click(function(){
+			var origin = $("#origin").val(),
+				destination = $("#destination").val();
+			
+			SV.getDirections(origin, destination);
+		});
 	});
 	
 	
