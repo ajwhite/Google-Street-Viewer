@@ -32,23 +32,59 @@
 	
 
 	function StreetViewer(){
-		this.mapID = "map";
+		this.mapID = "streetview";
+		this.mapTrackerID = "map";
 		this.map = null;
+		this.mapTracker = null;
 		this.streetView = null;
 		this.streetViewService = null;
 		this.directionsService = null;
+		this.directionsRenderer = null;
+		this.marker = null;
 		
-		this.maxPoints = 100;
+		this.speed = 300;
+		
+		this.maxPoints = 500;
 		this.points = [];
 		this.path = [];
 		this.currentStep = 0;
 		this.pitch = 10;
+		
+		this.landingPoint = {
+			lat: 42.3802,
+			lng: -71.0470833
+		};
+		this.running = false;
 	};
 	
 	
 	StreetViewer.prototype.init = function(){
+		var self = this;
 		this.streetViewService = new google.maps.StreetViewService();
 		this.directionsService = new google.maps.DirectionsService();	
+		this.directionsRenderer = new google.maps.DirectionsRenderer();
+		
+		var mapOptions = {
+			zoom: 13,
+		    center: new google.maps.LatLng('42.3802', '-71.0470833'),
+		    scrollwheel: false,
+		    disableDefaultUI: true		
+		};
+		this.map = new google.maps.Map(document.getElementById(this.mapID), mapOptions);
+		
+		function pan(){
+			if (self.running) return;
+			self.landingPoint.lat -= 0.000013;
+			self.landingPoint.lng -= 0.000002;
+			
+			var point = new google.maps.LatLng(self.landingPoint.lat, self.landingPoint.lng);
+			self.map.panTo(point);
+			
+			setTimeout(function(){
+				pan();
+			},10);
+		}
+		pan();
 	};
 	
 	StreetViewer.prototype.mapInit = function(){
@@ -56,34 +92,46 @@
 			center: this.path[0],
 			zoom: 12
 		};
-		this.map = new google.maps.Map(document.getElementById(this.mapID), mapOptions);
+		//this.map = new google.maps.Map(document.getElementById(this.mapID), mapOptions);
+		//this.mapTracker = new google.maps.Map(document.getElementById(this.mapTrackerID), mapOptions);
+		//this.marker = new google.maps.Marker({ position: mapOptions.center, map: this.mapTracker});
+		this.directionsRenderer.setMap(this.mapTracker);
 		this.streetView = this.map.getStreetView();
+		
+		/*
 		this.streetView.setOptions({
 			position: mapOptions.center, 
+			linksControl: false,
+			zoomControlOptions: false,
+			enableCloseButton: false,
 			pov: {
 				heading: 100,
 				pitch: 10
 			},
 			visible: true
 		});
+		*/
 	}
 	
 	StreetViewer.prototype.traverse = function(){
 		var self = this,
 			point = this.points[this.currentStep];
 		
-		console.log("POINT", point);
 		this.streetView.setPano(point.pano);
 		this.streetView.setPov({
 			heading: point.bearing,
 			pitch: 10
 		});
-		//this.map.setCenter(this.path[this.currentStep]);
+		
+		
+		$(".trip-progress .current").css('left', ((this.currentStep / this.points.length)*100) + '%');
+		
+		//this.marker.setPosition(point.latlng);
 		this.currentStep++;
 		
 		setTimeout(function(){
 			self.traverse();
-		},800);
+		},this.speed);
 		
 		if (this.currentStep > this.maxPoints) return;
 	}
@@ -92,7 +140,8 @@
 		console.log("Direcitons", directions);
 		var routes = directions.routes;
 			//path = routes[0].overview_path;
-			
+		
+		this.directionsRenderer.setDirections(directions)
 		
 		var count = 0;
 		var steps = routes[0].legs[0].steps;
@@ -108,9 +157,7 @@
 	function updateProgress(step, total){
 		var percent = (step / total) * 100;
 		if (percent >= 100){
-			setTimeout(function(){
-				$(".loading-section").fadeOut();
-			}, 1000);
+			
 		} else {
 			$(".progress-bar").css('width', percent + '%');
 		}
@@ -121,9 +168,11 @@
 		var self = this,
 			i = 0,
 			j = 0;
+		
+		var limit = self.maxPoints > self.path.length ? self.path.length : self.maxPoints;
 		function getPano(){
 			self.streetViewService.getPanoramaByLocation(self.path[i], 50, function(result, status){
-				if (j>self.maxPoints || i == self.path.length-1) {
+				if (j>limit || i == limit-1) {
 					self.buildPointsComplete();
 					return;
 				}
@@ -136,7 +185,7 @@
 					self.points.push(point);
 					j++;
 					
-					updateProgress(j, self.maxPoints);
+					updateProgress(i, limit);
 				}
 				i++;
 				getPano();
@@ -145,27 +194,34 @@
 		
 		getPano();
 		console.log("Building points..");
-		/*
-		 
-		
-		this.streetViewService.getPanoramaByLocation()
-		for(var i=0; i<this.path.length-1; i++){
-			var point = new Point();
-			point.bearing = Point2PointBearing(this.path[i], this.path[i+1]);
-			point.latlng = this.path[i];
-			
-		}
-		*/
 	};
 	
 	StreetViewer.prototype.buildPointsComplete = function(){
 		console.log("Build complete");
 		console.log("Points", this.points);	
+		setTimeout(function(){
+			$("#welcome").fadeOut();
+			$("#overlay").fadeIn();
+		}, 1000);
+		
+		
+		this.streetView.setOptions({
+			position: this.points[0].latlng, 
+			linksControl: false,
+			zoomControl: false,
+			enableCloseButton: false,
+			panControl: false,
+			pov: {
+				heading: 100,
+				pitch: 10
+			},
+			visible: true
+		});
+		this.running = true;
 		this.traverse();
 	};
 	
 	StreetViewer.prototype.getDirections = function(origin, destination){
-		$(".loading-section").show();
 		var self = this;
 		var request = {
 			origin: origin,
@@ -183,6 +239,7 @@
 		
 	
 	$(window).load(function(){
+		
 		var SV = new StreetViewer();
 		SV.init();
 		window.SV = SV;
@@ -190,8 +247,23 @@
 		$("#go").click(function(){
 			var origin = $("#origin").val(),
 				destination = $("#destination").val();
+				
+			$(".search").fadeOut(300, function(){
+				$(".loading").show();
+			});
 			
 			SV.getDirections(origin, destination);
+		});
+		
+		$("#speed").slider().on('slide', function(ev){
+			var speed = parseInt($(this).val()) * 20;
+			speed = 1000 - speed;
+			SV.speed = speed;
+			console.log(SV.speed);
+		});
+		
+		$("#speed").change(function(){
+			SV.speed = parseInt($(this).val());
 		});
 	});
 	
