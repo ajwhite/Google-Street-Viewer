@@ -141,9 +141,9 @@ header { position: relative; z-index:10; }
 
 #welcome { background-color: #fbfbfb; padding: 40px; width: 800px; position: absolute; z-index: 10; top:50%; margin-top:-100px;
 	left: 50%; margin-left:-400px;
-	-webkit-box-shadow: 0px 0px 13px 0px rgba(50, 50, 50, 0.65);
-	-moz-box-shadow:    0px 0px 13px 0px rgba(50, 50, 50, 0.65);
-	box-shadow:         0px 0px 13px 0px rgba(50, 50, 50, 0.65);
+	-webkit-box-shadow: 0px 0px 13px 5px rgba(50, 50, 50, 0.85);
+	-moz-box-shadow:    0px 0px 13px 5px rgba(50, 50, 50, 0.85);
+	box-shadow:         0px 0px 13px 5px rgba(50, 50, 50, 0.85);
 	
 	border-radius: 8px;
 }

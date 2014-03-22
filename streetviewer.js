@@ -65,24 +65,27 @@
 		this.directionsRenderer = new google.maps.DirectionsRenderer();
 		
 		var mapOptions = {
-			zoom: 13,
-		    center: new google.maps.LatLng('42.3802', '-71.0470833'),
+			zoom: 18,
+		    center:new google.maps.LatLng(40.766846, -73.970602), // new google.maps.LatLng('42.3802', '-71.0470833'),
 		    scrollwheel: false,
-		    disableDefaultUI: true		
+		    disableDefaultUI: true,
+		    mapTypeId: google.maps.MapTypeId.HYBRID
 		};
 		this.map = new google.maps.Map(document.getElementById(this.mapID), mapOptions);
-		
+		this.map.setTilt(45);
+		this.map.setHeading(320);
 		function pan(){
 			if (self.running) return;
-			self.landingPoint.lat -= 0.000013;
-			self.landingPoint.lng -= 0.000002;
+			self.landingPoint.lat -= 0.000023;
+			self.landingPoint.lng -= 0.000019;
 			
 			var point = new google.maps.LatLng(self.landingPoint.lat, self.landingPoint.lng);
-			self.map.panTo(point);
+			//self.map.panTo(point);
+			self.map.panBy(0.2,-0.1);
 			
 			setTimeout(function(){
 				pan();
-			},10);
+			},5);
 		}
 		pan();
 	};
