@@ -167,6 +167,36 @@
 	}
 	
 	
+	StreetViewer.prototype.buildPoints = function () {
+		var self = this,
+			i = 0,
+			j = 0,
+			limit = self.maxPoints > self.path.length ? self.path.length : self.maxPoints;
+		console.log('path', self.path);
+		function getPano(index) {
+			self.streetViewService.getPanoramaByLocation(self.path[index], 50, function (result, status) {
+				if (index === limit-1) {
+					self.buildPointsComplete();
+					return;
+				}
+				if (status == google.maps.StreetViewStatus.OK) {
+					var point = new Point();
+					point.latlng = self.path[index];
+					point.bearing = Point2PointBearing(self.path[index], self.path[index + 1]);
+					point.pano = result.location.pano;
+					self.points.push(point);
+					j++;
+					updateProgress(index, limit);
+				}
+			});
+		}
+		
+		for (var i = 0; i < limit.length; i++) {
+			getPano(i);
+		}
+		
+	};
+/*
 	StreetViewer.prototype.buildPoints = function(){
 		var self = this,
 			i = 0,
@@ -198,6 +228,7 @@
 		getPano();
 		console.log("Building points..");
 	};
+*/
 	
 	StreetViewer.prototype.buildPointsComplete = function(){
 		console.log("Build complete");
